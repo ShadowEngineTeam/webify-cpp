@@ -10,16 +10,6 @@ For the list of available options
 
     $> webify --help
 
-## Installation
-
-Latest pre-built binaries for windows, mac and linux can be downloaded
-[here](https://github.com/ananthakumaran/webify/releases/latest)
-
-You can also install it via cabal
-
-     $> cabal install webify
-
-
 ## CSS @font-face template
 
 ````css
