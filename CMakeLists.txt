@@ -118,7 +118,7 @@ endif()
 # -------------------------------------------------------------------
 set(PLATFORM_LIBS)
 if(WIN32)
-    list(APPEND PLATFORM_LIBS advapi32.lib bcrypt.lib)
+    list(APPEND PLATFORM_LIBS advapi32 bcrypt)
 endif()
 if(UNIX)
     find_library(M_LIB m)
