@@ -4,17 +4,25 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    env:
-      ZIG_TARGET: ${{ matrix.target }}
     strategy:
       matrix:
-        target: [aarch64-windows-gnu, aarch64-linux-musl, aarch64-macos-none, x86_64-windows-gnu, x86_64-linux-musl, x86_64-macos-none, arm-linux-musleabihf, x86-windows-gnu, x86-linux-musl]
+        include:
+          - { target: aarch64-windows-gnu,  runner: windows-11-arm, can_test: true }
+          - { target: aarch64-linux-musl,   runner: ubuntu-24.04-arm,  can_test: false }
+          - { target: aarch64-macos-none,   runner: macos-26,   can_test: true  }
+          - { target: x86_64-windows-gnu,   runner: windows-2025, can_test: true  }
+          - { target: x86_64-linux-musl,    runner: ubuntu-24.04,  can_test: true  }
+          - { target: x86_64-macos-none,    runner: macos-26-intel, can_test: true  }
+          - { target: arm-linux-musleabihf, runner: ubuntu-24.04-arm,  can_test: true }
+          - { target: x86-windows-gnu,      runner: windows-2025, can_test: true  }
+          - { target: x86-linux-musl,       runner: ubuntu-24.04,  can_test: true  }
+    runs-on: ${{ matrix.runner }}
+    env:
+      ZIG_TARGET: ${{ matrix.target }}
     steps:
       - name: Checkout
         uses: actions/checkout@main
         with:
-          path: ${{ github.workspace }}
           submodules: true
 
       - name: Setup Zig
@@ -24,6 +32,7 @@ jobs:
           use-cache: false
 
       - name: Setup Zig Toolchain
+        shell: bash
         run: git clone https://github.com/HomuHomu833/zig-as-llvm ${{ github.workspace }}/zig-as-llvm
 
       - name: Build Webify
@@ -33,11 +42,12 @@ jobs:
           if [[ "$ZIG_TARGET" != *"-macos-"* ]]; then
             STATIC_FLAG="-static"
           fi
+          JOBS=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo "${NUMBER_OF_PROCESSORS:-4}")
           mkdir build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel \
-            -DCMAKE_C_FLAGS="${STATIC_FLAG} -D_LARGEFILE64_SOURCE=1" \
-            -DCMAKE_CXX_FLAGS="${STATIC_FLAG} -D_LARGEFILE64_SOURCE=1" \
+            -DCMAKE_C_FLAGS="${STATIC_FLAG}" \
+            -DCMAKE_CXX_FLAGS="${STATIC_FLAG}" \
             -DCMAKE_EXE_LINKER_FLAGS="${STATIC_FLAG}" \
             -DCMAKE_C_COMPILER="${TOOLCHAIN}/bin/cc" \
             -DCMAKE_CXX_COMPILER="${TOOLCHAIN}/bin/c++" \
@@ -48,4 +58,19 @@ jobs:
             -DCMAKE_RANLIB="${TOOLCHAIN}/bin/ranlib" \
             -DCMAKE_STRIP="${TOOLCHAIN}/bin/strip" \
             -DCMAKE_RC_COMPILER="${TOOLCHAIN}/bin/rc"
-          cmake --build . --config MinSizeRel -j$(nproc 2>/dev/null || sysctl -n hw.logicalcpu)
+          cmake --build . --config MinSizeRel -j"${JOBS}"
+
+      - name: Test
+        if: matrix.can_test
+        shell: bash
+        run: |
+          BINARY=$(find build -maxdepth 1 -name "webify*" -type f | head -1)
+          "$BINARY" --version
+          "$BINARY" vcr.ttf
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webify-${{ matrix.target }}
+          path: build/webify*
+          if-no-files-found: error
