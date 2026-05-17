@@ -8,6 +8,7 @@ jobs:
     env:
       ZIG_TARGET: ${{ matrix.target }}
     strategy:
+      fail-fast: false
       matrix:
         target: [aarch64-windows-gnu, aarch64-linux-musl, aarch64-macos-none, x86_64-windows-gnu, x86_64-linux-musl, x86_64-macos-none, arm-linux-musleabihf, x86-windows-gnu, x86-linux-musl]
     steps:
