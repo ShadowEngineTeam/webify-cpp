@@ -64,7 +64,7 @@ jobs:
         if: matrix.can_test
         shell: bash
         run: |
-          BINARY=$(find build -maxdepth 1 -name "webify*" -type f | head -1)
+          BINARY=$(/usr/bin/find build -maxdepth 1 -name "webify*" -type f | head -1)
           "$BINARY" --version
           "$BINARY" vcr.ttf
 
