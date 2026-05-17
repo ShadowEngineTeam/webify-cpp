@@ -5,7 +5,6 @@ A command line tool to convert ttf file to woff, woff2, eot & svg files
 ## Usage
 
     $> webify fontname.ttf
-    $> webify --woff2 fontname.ttf
 
 For the list of available options
 
