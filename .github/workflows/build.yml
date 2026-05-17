@@ -32,15 +32,18 @@ jobs:
         shell: bash
         run: |
           TOOLCHAIN=${{ github.workspace }}/zig-as-llvm
-          if [[ "$ZIG_TARGET" != *"-macos-"* ]]; then
+          if echo 'int main(){}' | "${TOOLCHAIN}/bin/cc" -x c - -static -o /dev/null 2>/dev/null; then
             STATIC_FLAG="-static"
+          fi
+          if [[ "$ZIG_TARGET" == *"-musl"* ]]; then
+            LARGEFILE_FLAG="-D_LARGEFILE64_SOURCE=1"
           fi
           JOBS=$(nproc 2>/dev/null || sysctl -n hw.logicalcpu 2>/dev/null || echo "${NUMBER_OF_PROCESSORS:-4}")
           mkdir build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel \
-            -DCMAKE_C_FLAGS="${STATIC_FLAG} -D_LARGEFILE64_SOURCE=1" \
-            -DCMAKE_CXX_FLAGS="${STATIC_FLAG} -D_LARGEFILE64_SOURCE=1" \
+            -DCMAKE_C_FLAGS="${STATIC_FLAG} ${LARGEFILE_FLAG}" \
+            -DCMAKE_CXX_FLAGS="${STATIC_FLAG} ${LARGEFILE_FLAG}" \
             -DCMAKE_EXE_LINKER_FLAGS="${STATIC_FLAG}" \
             -DCMAKE_C_COMPILER="${TOOLCHAIN}/bin/cc" \
             -DCMAKE_CXX_COMPILER="${TOOLCHAIN}/bin/c++" \
