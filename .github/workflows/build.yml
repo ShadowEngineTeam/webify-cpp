@@ -46,8 +46,8 @@ jobs:
           mkdir build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel \
-            -DCMAKE_C_FLAGS="${STATIC_FLAG}" \
-            -DCMAKE_CXX_FLAGS="${STATIC_FLAG}" \
+            -DCMAKE_C_FLAGS="-D_LARGEFILE64_SOURCE=1 ${STATIC_FLAG}" \
+            -DCMAKE_CXX_FLAGS="-D_LARGEFILE64_SOURCE=1 ${STATIC_FLAG}" \
             -DCMAKE_EXE_LINKER_FLAGS="${STATIC_FLAG}" \
             -DCMAKE_C_COMPILER="${TOOLCHAIN}/bin/cc" \
             -DCMAKE_CXX_COMPILER="${TOOLCHAIN}/bin/c++" \
