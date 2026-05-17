@@ -48,5 +48,4 @@ jobs:
             -DCMAKE_RANLIB="${TOOLCHAIN}/bin/ranlib" \
             -DCMAKE_STRIP="${TOOLCHAIN}/bin/strip" \
             -DCMAKE_RC_COMPILER="${TOOLCHAIN}/bin/rc"
-          cmake --build . --config MinSizeRel -j$(nproc)
-  
+          cmake --build . --config MinSizeRel -j$(nproc 2>/dev/null || sysctl -n hw.logicalcpu)
