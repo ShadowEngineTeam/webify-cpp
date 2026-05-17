@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-26
+    runs-on: windows-11-arm
     env:
       ZIG_TARGET: ${{ matrix.target }}
     strategy:
