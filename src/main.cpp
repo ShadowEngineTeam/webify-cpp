@@ -11,6 +11,7 @@ struct Options {
     bool generateWOFF2 = true;
     bool generateSVG = true;
     bool useZopfli = false;
+    bool useBrotli = true;
     bool svgEnableKerning = false;
     uint16_t svgCmapPlatformID = 0xFFFF;
     uint16_t svgCmapEncodingID = 0xFFFF;
@@ -25,13 +26,14 @@ void printUsage(const char* progName) {
               << "  -w2, --no-woff2                   Skip WOFF2 generation\n"
               << "  -s,  --no-svg                     Skip SVG generation\n"
               << "  -z,  --zopfli                     Use Zopfli compression for WOFF\n"
+              << "  -nb,  --no-brotli                 Skip Brotli compression for WOFF2\n"
               << "  --svg-enable-kerning              Enable kerning in SVG output\n"
               << "  --svg-cmap-platform-id <id>       Set SVG cmap platform ID\n"
               << "  --svg-cmap-encoding-id <id>       Set SVG cmap encoding ID\n"
               << "\nExamples:\n"
               << "  " << progName << " myfont.ttf\n"
               << "  " << progName << " --no-svg myfont.ttf\n"
-              << "  " << progName << " --zopfli myfont.ttf myfont2.ttf\n"
+              << "  " << progName << " --zopfli myfont.ttf myfont2.ttf\n";
 }
 
 std::string outputPath(const std::string& inputFile, const std::string& extension) {
@@ -62,6 +64,9 @@ int main(int argc, char* argv[]) {
             opts.generateSVG = false;
         } else if (arg == "-z" || arg == "--zopfli") {
             opts.useZopfli = true;
+        } else if (arg == "-nb" || arg == "--no-brotli") {
+            opts.useBrotli = false;
+        }
         } else if (arg == "-k" || arg == "--svg-enable-kerning") {
             opts.svgEnableKerning = true;
         } else if (arg == "--svg-cmap-platform-id") {
@@ -113,7 +118,7 @@ int main(int argc, char* argv[]) {
             if (opts.generateWOFF2) {
                 std::string woff2File = outputPath(inputFile, ".woff2");
                 std::cout << "  Generating: " << woff2File << "\n";
-                if (!FontGenerator::generateWOFF2(*font, woff2File)) {
+                if (!FontGenerator::generateWOFF2(*font, woff2File, opts.useBrotli)) {
                     std::cerr << "  Warning: Failed to generate WOFF2\n";
                     success = false;
                 }
@@ -128,17 +133,27 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (opts.generateSVG && !font->isOTF()) {
+            if (opts.generateSVG) {
                 std::string svgFile = outputPath(inputFile, ".svg");
                 std::cout << "  Generating: " << svgFile << "\n";
-                auto ttfFont = dynamic_cast<TTFFont*>(font.get());
-                if (ttfFont && !FontGenerator::generateSVG(*ttfFont, svgFile,
-                                                          opts.svgEnableKerning,
-                                                          opts.svgCmapPlatformID,
-                                                          opts.svgCmapEncodingID)) {
+#ifdef HAVE_FREETYPE
+                if (!FontGenerator::generateSVG(font->rawBytes, svgFile,
+                                                opts.svgEnableKerning)) {
                     std::cerr << "  Warning: Failed to generate SVG\n";
                     success = false;
                 }
+#else
+                if (!font->isOTF()) {
+                    auto ttfFont = dynamic_cast<TTFFont*>(font.get());
+                    if (ttfFont && !FontGenerator::generateSVG(*ttfFont, svgFile,
+                                                              opts.svgEnableKerning,
+                                                              opts.svgCmapPlatformID,
+                                                              opts.svgCmapEncodingID)) {
+                        std::cerr << "  Warning: Failed to generate SVG\n";
+                        success = false;
+                    }
+                }
+#endif
             }
 
             if (!success) {

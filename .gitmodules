@@ -15,3 +15,11 @@
 	path = third_party/libxml2
 	url = https://gitlab.gnome.org/GNOME/libxml2.git
 	depth = 1
+[submodule "third_party/freetype"]
+	path = third_party/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git
+	depth = 1
+[submodule "third_party/harfbuzz"]
+	path = third_party/harfbuzz
+	url = https://github.com/harfbuzz/harfbuzz.git
+	depth = 1

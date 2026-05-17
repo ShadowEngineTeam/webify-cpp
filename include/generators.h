@@ -15,12 +15,16 @@ public:
     static bool generateWOFF(const Font& font, const std::string& outputPath, bool useZopfli = false);
 
     // Generate WOFF2 file
-    static bool generateWOFF2(const Font& font, const std::string& outputPath);
+    static bool generateWOFF2(const Font& font, const std::string& outputPath, bool useBrotli = true);
 
     // Generate SVG file (TTF only)
     static bool generateSVG(const TTFFont& font, const std::string& outputPath,
                           bool enableKerning = false, UShort cmapPlatformID = 0xFFFF,
                           UShort cmapEncodingID = 0xFFFF);
+
+    // Generate SVG file using FreeType (supports both TTF and OTF/CFF)
+    static bool generateSVG(const std::vector<Byte>& fontData, const std::string& outputPath,
+                          bool enableKerning = false);
 
 private:
     // WOFF helpers
@@ -31,6 +35,9 @@ private:
 
     static std::vector<Byte> buildSVGDocument(const TTFFont& font, bool enableKerning,
                                               UShort cmapPlatformID, UShort cmapEncodingID);
+
+    static std::vector<Byte> buildSVGDocument(const std::vector<Byte>& fontData,
+                                              bool enableKerning);
 
 public:
     // SVG helpers (public so internal helpers can use them)

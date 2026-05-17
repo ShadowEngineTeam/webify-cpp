@@ -29,10 +29,10 @@ static void writeUIntBase128(std::vector<Byte>& data, uint32_t value) {
     data.insert(data.end(), ptr, buf + 5);
 }
 
-#ifdef HAVE_BROTLI
 std::vector<Byte> FontGenerator::compressBrotli(const std::vector<Byte>& data) {
-    if (data.empty()) return {};
+    if (data.empty()) return data;
 
+#ifdef HAVE_BROTLI
     size_t maxOut = BrotliEncoderMaxCompressedSize(data.size());
     if (maxOut == 0) return {};
 
@@ -47,14 +47,19 @@ std::vector<Byte> FontGenerator::compressBrotli(const std::vector<Byte>& data) {
 
     if (ret == BROTLI_TRUE) {
         result.resize(encodedSize);
+        if (result.size() >= data.size()) {
+            return data;
+        }
         return result;
     }
-    return {};
-}
+    return data;
+#else
+    (void)data;
+    return data;
 #endif
+}
 
-bool FontGenerator::generateWOFF2(const Font& font, const std::string& outputPath) {
-#ifdef HAVE_BROTLI
+bool FontGenerator::generateWOFF2(const Font& font, const std::string& outputPath, bool useBrotli) {
     try {
         std::vector<const TableDirectory*> byTag;
         for (const auto& pair : font.tableDirectories) {
@@ -82,11 +87,11 @@ bool FontGenerator::generateWOFF2(const Font& font, const std::string& outputPat
             tableData.insert(tableData.end(), rawData.begin(), rawData.end());
         }
 
-        std::vector<Byte> compressedData = FontGenerator::compressBrotli(tableData);
-
-        if (compressedData.empty()) {
-            std::cerr << "Error: Brotli compression failed\n";
-            return false;
+        std::vector<Byte> compressedData;
+        if (useBrotli) {
+            compressedData = FontGenerator::compressBrotli(tableData);
+        } else {
+            compressedData = tableData;
         }
 
         std::vector<Byte> woff2;
@@ -123,10 +128,4 @@ bool FontGenerator::generateWOFF2(const Font& font, const std::string& outputPat
         std::cerr << "Error generating WOFF2: " << e.what() << "\n";
         return false;
     }
-#else
-    (void)font;
-    (void)outputPath;
-    std::cerr << "Error: WOFF2 support requires brotli\n";
-    return false;
-#endif
 }

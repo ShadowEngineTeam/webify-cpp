@@ -245,21 +245,3 @@ bool FontGenerator::generateWOFF(const Font& font, const std::string& outputPath
         return false;
     }
 }
-
-bool FontGenerator::generateSVG(const TTFFont& font, const std::string& outputPath,
-                               bool enableKerning, UShort cmapPlatformID,
-                               UShort cmapEncodingID) {
-    try {
-        auto svgData = FontGenerator::buildSVGDocument(font, enableKerning,
-                                                       cmapPlatformID, cmapEncodingID);
-        if (svgData.empty()) {
-            std::cerr << "Failed to build SVG document\n";
-            return false;
-        }
-        return Utils::writeFileBytes(outputPath, svgData);
-
-    } catch (const std::exception& e) {
-        std::cerr << "Error generating SVG: " << e.what() << "\n";
-        return false;
-    }
-}

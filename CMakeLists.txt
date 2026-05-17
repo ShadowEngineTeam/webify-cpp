@@ -133,6 +133,51 @@ else()
 endif()
 
 # -------------------------------------------------------------------
+# FreeType
+# -------------------------------------------------------------------
+if(EXISTS ${THIRD_PARTY_DIR}/freetype/CMakeLists.txt)
+    set(ZLIB_FOUND_BACKUP ${ZLIB_FOUND})
+    set(ZLIB_FOUND FALSE CACHE BOOL "" FORCE)
+    set(FT_DISABLE_BZIP2 TRUE CACHE BOOL "" FORCE)
+    set(FT_DISABLE_PNG TRUE CACHE BOOL "" FORCE)
+    set(FT_DISABLE_HARFBUZZ TRUE CACHE BOOL "" FORCE)
+    set(FT_DISABLE_BROTLI TRUE CACHE BOOL "" FORCE)
+    set(FT_DISABLE_ZLIB TRUE CACHE BOOL "" FORCE)
+    add_subdirectory(${THIRD_PARTY_DIR}/freetype third_party/freetype EXCLUDE_FROM_ALL)
+    set(ZLIB_FOUND ${ZLIB_FOUND_BACKUP} CACHE BOOL "" FORCE)
+    set(FREETYPE_FOUND TRUE)
+    set(FREETYPE_LIBRARIES freetype)
+    message(STATUS "Using freetype from third_party")
+else()
+    find_package(Freetype QUIET)
+    if(FREETYPE_FOUND)
+        message(STATUS "Using system freetype")
+    endif()
+endif()
+
+# -------------------------------------------------------------------
+# HarfBuzz
+# -------------------------------------------------------------------
+if(EXISTS ${THIRD_PARTY_DIR}/harfbuzz/CMakeLists.txt)
+    set(HB_HAVE_FREETYPE ON CACHE BOOL "" FORCE)
+    set(HB_BUILD_SUBSET OFF CACHE BOOL "" FORCE)
+    set(HB_BUILD_RASTER OFF CACHE BOOL "" FORCE)
+    set(HB_BUILD_VECTOR OFF CACHE BOOL "" FORCE)
+    set(HB_BUILD_GPU OFF CACHE BOOL "" FORCE)
+    set(HB_BUILD_UTILS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(${THIRD_PARTY_DIR}/harfbuzz third_party/harfbuzz EXCLUDE_FROM_ALL)
+    set(HARFBUZZ_FOUND TRUE)
+    set(HARFBUZZ_LIBRARIES harfbuzz)
+    message(STATUS "Using harfbuzz from third_party")
+else()
+    find_package(HarfBuzz QUIET)
+    if(HarfBuzz_FOUND)
+        set(HARFBUZZ_FOUND TRUE)
+        message(STATUS "Using system harfbuzz")
+    endif()
+endif()
+
+# -------------------------------------------------------------------
 # Platform-specific link libraries
 # -------------------------------------------------------------------
 set(PLATFORM_LIBS)
@@ -165,10 +210,6 @@ set(SOURCES
     src/svg.cpp
 )
 
-if(LIBXML2_FOUND)
-    list(APPEND SOURCES src/svg_libxml2.cpp)
-endif()
-
 add_executable(webify ${SOURCES})
 
 target_link_libraries(webify PRIVATE
@@ -176,6 +217,8 @@ target_link_libraries(webify PRIVATE
     ${ZOPFLI_LIBRARIES}
     ${BROTLI_LIBRARIES}
     ${LIBXML2_LIBRARIES}
+    ${FREETYPE_LIBRARIES}
+    ${HARFBUZZ_LIBRARIES}
     ${PLATFORM_LIBS}
 )
 
@@ -185,6 +228,8 @@ target_compile_definitions(webify PRIVATE
     $<$<BOOL:${BROTLI_FOUND}>:HAVE_BROTLI>
     $<$<BOOL:${LIBXML2_FOUND}>:HAVE_LIBXML2>
     $<$<BOOL:${LIBXML2_FOUND}>:LIBXML_STATIC>
+    $<$<BOOL:${FREETYPE_FOUND}>:HAVE_FREETYPE>
+    $<$<BOOL:${HARFBUZZ_FOUND}>:HAVE_HARFBUZZ>
 )
 
 if(ZOPFLI_FOUND)
@@ -192,6 +237,12 @@ if(ZOPFLI_FOUND)
 endif()
 if(BROTLI_FOUND)
     target_include_directories(webify PRIVATE ${BROTLI_INCLUDE_DIRS})
+endif()
+if(FREETYPE_FOUND)
+    target_include_directories(webify PRIVATE ${THIRD_PARTY_DIR}/freetype/include)
+endif()
+if(HARFBUZZ_FOUND)
+    target_include_directories(webify PRIVATE ${THIRD_PARTY_DIR}/harfbuzz/src)
 endif()
 
 install(TARGETS webify RUNTIME DESTINATION bin)
