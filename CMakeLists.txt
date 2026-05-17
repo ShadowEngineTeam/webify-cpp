@@ -134,9 +134,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 if(LIBXML2_FOUND)
     include_directories(${LIBXML2_INCLUDE_DIR})
 endif()
-if(ZOPFLI_FOUND)
-    target_include_directories(webify PRIVATE ${THIRD_PARTY_DIR}/zopfli/src/zopfli)
-endif()
 
 set(SOURCES
     src/main.cpp
@@ -167,5 +164,9 @@ target_compile_definitions(webify PRIVATE
     $<$<BOOL:${LIBXML2_FOUND}>:HAVE_LIBXML2>
     $<$<BOOL:${LIBXML2_FOUND}>:LIBXML_STATIC>
 )
+
+if(ZOPFLI_FOUND)
+    target_include_directories(webify PRIVATE ${THIRD_PARTY_DIR}/zopfli/src/zopfli)
+endif()
 
 install(TARGETS webify RUNTIME DESTINATION bin)
