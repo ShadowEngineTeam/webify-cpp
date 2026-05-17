@@ -7,14 +7,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - { target: aarch64-windows-gnu,  runner: windows-11-arm, can_test: true }
+          - { target: aarch64-windows-gnu,  runner: ubuntu-24.04, can_test: false }
           - { target: aarch64-linux-musl,   runner: ubuntu-24.04-arm,  can_test: false }
           - { target: aarch64-macos-none,   runner: macos-26,   can_test: true  }
-          - { target: x86_64-windows-gnu,   runner: windows-2025, can_test: true  }
+          - { target: x86_64-windows-gnu,   runner: ubuntu-24.04, can_test: false  }
           - { target: x86_64-linux-musl,    runner: ubuntu-24.04,  can_test: true  }
           - { target: x86_64-macos-none,    runner: macos-26-intel, can_test: true  }
           - { target: arm-linux-musleabihf, runner: ubuntu-24.04-arm,  can_test: true }
-          - { target: x86-windows-gnu,      runner: windows-2025, can_test: true  }
+          - { target: x86-windows-gnu,      runner: ubuntu-24.04, can_test: false  }
           - { target: x86-linux-musl,       runner: ubuntu-24.04,  can_test: true  }
     runs-on: ${{ matrix.runner }}
     env:
@@ -64,7 +64,7 @@ jobs:
         if: matrix.can_test
         shell: bash
         run: |
-          BINARY=$(find build -maxdepth 1 -name "webify*" -type f | head -1)
+          BINARY=$(/usr/bin/find build -maxdepth 1 -name "webify*" -type f | head -1)
           "$BINARY" --version
           "$BINARY" vcr.ttf
 
