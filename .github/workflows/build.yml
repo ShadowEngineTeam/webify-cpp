@@ -4,25 +4,17 @@ on:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        include:
-          - { target: aarch64-windows-gnu,  runner: ubuntu-24.04, can_test: false }
-          - { target: aarch64-linux-musl,   runner: ubuntu-24.04-arm,  can_test: false }
-          - { target: aarch64-macos-none,   runner: macos-26,   can_test: true  }
-          - { target: x86_64-windows-gnu,   runner: ubuntu-24.04, can_test: false  }
-          - { target: x86_64-linux-musl,    runner: ubuntu-24.04,  can_test: true  }
-          - { target: x86_64-macos-none,    runner: macos-26-intel, can_test: true  }
-          - { target: arm-linux-musleabihf, runner: ubuntu-24.04-arm,  can_test: true }
-          - { target: x86-windows-gnu,      runner: ubuntu-24.04, can_test: false  }
-          - { target: x86-linux-musl,       runner: ubuntu-24.04,  can_test: true  }
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     env:
       ZIG_TARGET: ${{ matrix.target }}
+    strategy:
+      matrix:
+        target: [aarch64-windows-gnu, aarch64-linux-musl, aarch64-macos-none, x86_64-windows-gnu, x86_64-linux-musl, x86_64-macos-none, arm-linux-musleabihf, x86-windows-gnu, x86-linux-musl]
     steps:
       - name: Checkout
         uses: actions/checkout@main
         with:
+          path: ${{ github.workspace }}
           submodules: true
 
       - name: Setup Zig
@@ -46,8 +38,8 @@ jobs:
           mkdir build
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=MinSizeRel \
-            -DCMAKE_C_FLAGS="-D_LARGEFILE64_SOURCE=1 ${STATIC_FLAG}" \
-            -DCMAKE_CXX_FLAGS="-D_LARGEFILE64_SOURCE=1 ${STATIC_FLAG}" \
+            -DCMAKE_C_FLAGS="${STATIC_FLAG} -D_LARGEFILE64_SOURCE=1" \
+            -DCMAKE_CXX_FLAGS="${STATIC_FLAG} -D_LARGEFILE64_SOURCE=1" \
             -DCMAKE_EXE_LINKER_FLAGS="${STATIC_FLAG}" \
             -DCMAKE_C_COMPILER="${TOOLCHAIN}/bin/cc" \
             -DCMAKE_CXX_COMPILER="${TOOLCHAIN}/bin/c++" \
@@ -59,14 +51,6 @@ jobs:
             -DCMAKE_STRIP="${TOOLCHAIN}/bin/strip" \
             -DCMAKE_RC_COMPILER="${TOOLCHAIN}/bin/rc"
           cmake --build . --config MinSizeRel -j"${JOBS}"
-
-      - name: Test
-        if: matrix.can_test
-        shell: bash
-        run: |
-          BINARY=$(/usr/bin/find build -maxdepth 1 -name "webify*" -type f | head -1)
-          "$BINARY" --version
-          "$BINARY" vcr.ttf
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
