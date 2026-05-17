@@ -66,7 +66,6 @@ int main(int argc, char* argv[]) {
             opts.useZopfli = true;
         } else if (arg == "-nb" || arg == "--no-brotli") {
             opts.useBrotli = false;
-        }
         } else if (arg == "-k" || arg == "--svg-enable-kerning") {
             opts.svgEnableKerning = true;
         } else if (arg == "--svg-cmap-platform-id") {
