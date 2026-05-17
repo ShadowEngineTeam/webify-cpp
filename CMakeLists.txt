@@ -114,6 +114,25 @@ else()
 endif()
 
 # -------------------------------------------------------------------
+# Brotli
+# -------------------------------------------------------------------
+if(EXISTS ${THIRD_PARTY_DIR}/brotli/CMakeLists.txt)
+    set(BUILD_SHARED_LIBS OFF)
+    set(BROTLI_BUNDLED_MODE ON)
+    add_subdirectory(${THIRD_PARTY_DIR}/brotli third_party/brotli EXCLUDE_FROM_ALL)
+    set(BROTLI_FOUND TRUE)
+    set(BROTLI_INCLUDE_DIRS ${THIRD_PARTY_DIR}/brotli/c/include)
+    set(BROTLI_LIBRARIES brotlienc)
+    message(STATUS "Using brotli from third_party")
+else()
+    find_package(Brotli QUIET)
+    if(Brotli_FOUND)
+        set(BROTLI_FOUND TRUE)
+        message(STATUS "Using system brotli")
+    endif()
+endif()
+
+# -------------------------------------------------------------------
 # Platform-specific link libraries
 # -------------------------------------------------------------------
 set(PLATFORM_LIBS)
@@ -142,6 +161,7 @@ set(SOURCES
     src/utils.cpp
     src/eot.cpp
     src/woff.cpp
+    src/woff2.cpp
     src/svg.cpp
 )
 
@@ -154,6 +174,7 @@ add_executable(webify ${SOURCES})
 target_link_libraries(webify PRIVATE
     ${ZLIB_LIBRARIES}
     ${ZOPFLI_LIBRARIES}
+    ${BROTLI_LIBRARIES}
     ${LIBXML2_LIBRARIES}
     ${PLATFORM_LIBS}
 )
@@ -161,12 +182,16 @@ target_link_libraries(webify PRIVATE
 target_compile_definitions(webify PRIVATE
     $<$<BOOL:${ZLIB_FOUND}>:HAVE_ZLIB>
     $<$<BOOL:${ZOPFLI_FOUND}>:HAVE_ZOPFLI>
+    $<$<BOOL:${BROTLI_FOUND}>:HAVE_BROTLI>
     $<$<BOOL:${LIBXML2_FOUND}>:HAVE_LIBXML2>
     $<$<BOOL:${LIBXML2_FOUND}>:LIBXML_STATIC>
 )
 
 if(ZOPFLI_FOUND)
     target_include_directories(webify PRIVATE ${THIRD_PARTY_DIR}/zopfli/src/zopfli)
+endif()
+if(BROTLI_FOUND)
+    target_include_directories(webify PRIVATE ${BROTLI_INCLUDE_DIRS})
 endif()
 
 install(TARGETS webify RUNTIME DESTINATION bin)

@@ -4,7 +4,12 @@
 	depth = 1
 [submodule "third_party/zopfli"]
 	path = third_party/zopfli
-	url = https://github.com/google/zopfli.git
+	url = https://android.googlesource.com/platform/external/zopfli
+	branch = mirror-goog-main-external
+	depth = 1
+[submodule "third_party/brotli"]
+	path = third_party/brotli
+	url = https://github.com/google/brotli.git
 	depth = 1
 [submodule "third_party/libxml2"]
 	path = third_party/libxml2

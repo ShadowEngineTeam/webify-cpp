@@ -10,6 +10,7 @@ struct Options {
     bool generateWOFF = true;
     bool generateSVG = true;
     bool useZopfli = false;
+    bool generateWOFF2 = false;
     bool svgEnableKerning = false;
     uint16_t svgCmapPlatformID = 0xFFFF;
     uint16_t svgCmapEncodingID = 0xFFFF;
@@ -23,13 +24,15 @@ void printUsage(const char* progName) {
               << "  -w, --no-woff                    Skip WOFF generation\n"
               << "  -s, --no-svg                     Skip SVG generation\n"
               << "  -z, --zopfli                     Use Zopfli compression for WOFF\n"
+              << "      --woff2                      Generate WOFF2 output\n"
               << "  --svg-enable-kerning             Enable kerning in SVG output\n"
               << "  --svg-cmap-platform-id <id>     Set SVG cmap platform ID\n"
               << "  --svg-cmap-encoding-id <id>     Set SVG cmap encoding ID\n"
               << "\nExamples:\n"
               << "  " << progName << " myfont.ttf\n"
               << "  " << progName << " --no-svg myfont.ttf\n"
-              << "  " << progName << " --zopfli myfont.ttf myfont2.ttf\n";
+              << "  " << progName << " --zopfli myfont.ttf myfont2.ttf\n"
+              << "  " << progName << " --woff2 myfont.ttf\n";
 }
 
 std::string outputPath(const std::string& inputFile, const std::string& extension) {
@@ -58,6 +61,8 @@ int main(int argc, char* argv[]) {
             opts.generateSVG = false;
         } else if (arg == "-z" || arg == "--zopfli") {
             opts.useZopfli = true;
+        } else if (arg == "--woff2") {
+            opts.generateWOFF2 = true;
         } else if (arg == "-k" || arg == "--svg-enable-kerning") {
             opts.svgEnableKerning = true;
         } else if (arg == "--svg-cmap-platform-id") {
@@ -102,6 +107,15 @@ int main(int argc, char* argv[]) {
                 std::cout << "  Generating: " << eotFile << "\n";
                 if (!FontGenerator::generateEOT(*font, eotFile)) {
                     std::cerr << "  Warning: Failed to generate EOT\n";
+                    success = false;
+                }
+            }
+
+            if (opts.generateWOFF2) {
+                std::string woff2File = outputPath(inputFile, ".woff2");
+                std::cout << "  Generating: " << woff2File << "\n";
+                if (!FontGenerator::generateWOFF2(*font, woff2File)) {
+                    std::cerr << "  Warning: Failed to generate WOFF2\n";
                     success = false;
                 }
             }

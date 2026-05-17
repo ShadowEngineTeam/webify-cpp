@@ -14,6 +14,9 @@ public:
     // Generate WOFF file
     static bool generateWOFF(const Font& font, const std::string& outputPath, bool useZopfli = false);
 
+    // Generate WOFF2 file
+    static bool generateWOFF2(const Font& font, const std::string& outputPath);
+
     // Generate SVG file (TTF only)
     static bool generateSVG(const TTFFont& font, const std::string& outputPath,
                           bool enableKerning = false, UShort cmapPlatformID = 0xFFFF,
@@ -24,6 +27,7 @@ private:
     static std::vector<Byte> compressTable(const std::vector<Byte>& data);
     static std::vector<Byte> compressTableZlib(const std::vector<Byte>& data);
     static std::vector<Byte> compressTableZopfli(const std::vector<Byte>& data);
+    static std::vector<Byte> compressBrotli(const std::vector<Byte>& data);
 
     static std::vector<Byte> buildSVGDocument(const TTFFont& font, bool enableKerning,
                                               UShort cmapPlatformID, UShort cmapEncodingID);
