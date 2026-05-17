@@ -15,7 +15,6 @@
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/encoding.h>
-#include <libxml/xmlwriter.h>
 
 // ---------------------------------------------------------------------------
 // Coordinate formatting (same as svg.cpp - inline to avoid dependency)
@@ -177,11 +176,6 @@ static std::map<int, std::vector<int>> buildGidToCodeLibXML2(const CmapSubtable&
     return m;
 }
 
-// Helper: create a text node with escaped content
-static xmlNodePtr xmlNewTextChildEscaped(xmlNodePtr parent, const char* content) {
-    return xmlNewTextChild(parent, nullptr, BAD_CAST content, nullptr);
-}
-
 // ---------------------------------------------------------------------------
 // libxml2-based SVG document builder
 // Uses libxml2 tree API to build proper XML (matching Haskell Text.XML.Generator)
@@ -271,19 +265,20 @@ std::vector<Byte> FontGenerator::buildSVGDocument(const TTFFont& font, bool enab
         xmlNodePtr glyphNode = xmlNewChild(fontNode, nullptr, BAD_CAST "glyph", nullptr);
         // Unicode attribute
         std::string unicodeAttr;
-        if (code < 128) {
-            char c = static_cast<char>(code);
-            switch (c) {
-                case '<': unicodeAttr = "&lt;"; break;
-                case '>': unicodeAttr = "&gt;"; break;
-                case '&': unicodeAttr = "&amp;"; break;
-                case '"': unicodeAttr = "&quot;"; break;
-                default: unicodeAttr = std::string(1, c);
-            }
+        if (code < 0x80) {
+            unicodeAttr = std::string(1, static_cast<char>(code));
+        } else if (code < 0x800) {
+            unicodeAttr += static_cast<char>(0xC0 | (code >> 6));
+            unicodeAttr += static_cast<char>(0x80 | (code & 0x3F));
+        } else if (code < 0x10000) {
+            unicodeAttr += static_cast<char>(0xE0 | (code >> 12));
+            unicodeAttr += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+            unicodeAttr += static_cast<char>(0x80 | (code & 0x3F));
         } else {
-            std::ostringstream ss;
-            ss << "&#x" << std::hex << code << ";";
-            unicodeAttr = ss.str();
+            unicodeAttr += static_cast<char>(0xF0 | (code >> 18));
+            unicodeAttr += static_cast<char>(0x80 | ((code >> 12) & 0x3F));
+            unicodeAttr += static_cast<char>(0x80 | ((code >> 6) & 0x3F));
+            unicodeAttr += static_cast<char>(0x80 | (code & 0x3F));
         }
         xmlNewProp(glyphNode, BAD_CAST "unicode", BAD_CAST unicodeAttr.c_str());
         if (advanceX != avgAdvanceX)
@@ -294,6 +289,25 @@ std::vector<Byte> FontGenerator::buildSVGDocument(const TTFFont& font, bool enab
 
     // Kerning elements
     if (!validKerns.empty()) {
+        auto toUTF8 = [](int cp) -> std::string {
+            std::string s;
+            if (cp < 0x80) {
+                s += static_cast<char>(cp);
+            } else if (cp < 0x800) {
+                s += static_cast<char>(0xC0 | (cp >> 6));
+                s += static_cast<char>(0x80 | (cp & 0x3F));
+            } else if (cp < 0x10000) {
+                s += static_cast<char>(0xE0 | (cp >> 12));
+                s += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+                s += static_cast<char>(0x80 | (cp & 0x3F));
+            } else {
+                s += static_cast<char>(0xF0 | (cp >> 18));
+                s += static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
+                s += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+                s += static_cast<char>(0x80 | (cp & 0x3F));
+            }
+            return s;
+        };
         for (const auto& kern : validKerns) {
             auto it1 = gidToCode.find(static_cast<int>(kern.left));
             auto it2 = gidToCode.find(static_cast<int>(kern.right));
@@ -301,15 +315,11 @@ std::vector<Byte> FontGenerator::buildSVGDocument(const TTFFont& font, bool enab
             std::string u1, u2;
             for (size_t i = 0; i < it1->second.size(); ++i) {
                 if (i > 0) u1 += ",";
-                std::ostringstream ss;
-                ss << "&#x" << std::hex << it1->second[i] << ";";
-                u1 += ss.str();
+                u1 += toUTF8(it1->second[i]);
             }
             for (size_t i = 0; i < it2->second.size(); ++i) {
                 if (i > 0) u2 += ",";
-                std::ostringstream ss;
-                ss << "&#x" << std::hex << it2->second[i] << ";";
-                u2 += ss.str();
+                u2 += toUTF8(it2->second[i]);
             }
             xmlNodePtr kernNode = xmlNewChild(fontNode, nullptr, BAD_CAST "hkern", nullptr);
             xmlNewProp(kernNode, BAD_CAST "u1", BAD_CAST u1.c_str());

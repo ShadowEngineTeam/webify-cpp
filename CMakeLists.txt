@@ -131,9 +131,11 @@ endif()
 # Main executable
 # -------------------------------------------------------------------
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
 if(LIBXML2_FOUND)
     include_directories(${LIBXML2_INCLUDE_DIR})
+endif()
+if(ZOPFLI_FOUND)
+    target_include_directories(webify PRIVATE ${THIRD_PARTY_DIR}/zopfli/src/zopfli)
 endif()
 
 set(SOURCES
