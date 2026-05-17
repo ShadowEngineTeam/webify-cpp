@@ -163,6 +163,7 @@ target_compile_definitions(webify PRIVATE
     $<$<BOOL:${ZLIB_FOUND}>:HAVE_ZLIB>
     $<$<BOOL:${ZOPFLI_FOUND}>:HAVE_ZOPFLI>
     $<$<BOOL:${LIBXML2_FOUND}>:HAVE_LIBXML2>
+    $<$<BOOL:${LIBXML2_FOUND}>:LIBXML_STATIC>
 )
 
 install(TARGETS webify RUNTIME DESTINATION bin)
